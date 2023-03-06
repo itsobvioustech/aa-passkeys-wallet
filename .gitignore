@@ -1,14 +1,18 @@
 # Compiler files
 cache/
 out/
+artifacts/
+typechain-types/
 
 # Ignores development broadcast logs
-!/broadcast
+/broadcast
 /broadcast/*/31337/
 /broadcast/**/dry-run/
 
-# Docs
-docs/
-
 # Dotenv file
-.env
+.env*
+node_modules/
+.secret
+
+# OSX
+.DS_Store

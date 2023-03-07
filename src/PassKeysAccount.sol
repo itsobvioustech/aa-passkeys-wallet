@@ -2,11 +2,9 @@
 pragma solidity >=0.8.17;
 
 import "@account-abstraction/samples/SimpleAccount.sol";
-import "@openzeppelin/contracts/utils/Base64.sol";
+import "./utils/Base64.sol";
 import "./IPassKeysAccount.sol";
 import "./Secp256r1.sol";
-
-import "forge-std/console2.sol";
 
 contract PassKeysAccount is SimpleAccount, IPassKeysAccount {
     using Secp256r1 for uint256[2];
@@ -64,15 +62,14 @@ contract PassKeysAccount is SimpleAccount, IPassKeysAccount {
         emit PublicKeyRemoved(_keyRawId, publicKey);
     }
 
-    function _validateSignature(UserOperation calldata userOp, bytes32 userOpHash, address)
-    internal override virtual returns (uint256 deadline) {
-        console2.log("validate signature");
-        console2.log(userOpHash);
+    function _validateSignature(UserOperation calldata userOp, bytes32 userOpHash)
+    internal override virtual returns (uint256 validationData) {
         (uint256 rawKeyId, uint256 sigx, uint256 sigy, bytes memory authenticatorData, string memory clientDataJSONPre, string memory clientDataJSONPost) = 
             abi.decode(userOp.signature, (uint256, uint256, uint256, bytes, string, string));
 
-        string memory opHashBase64 = Base64.encode(bytes.concat(userOpHash)); // do we need the trailing == from base64 encoding?
-        bytes32 clientHash = sha256(bytes(string.concat(clientDataJSONPre, opHashBase64, clientDataJSONPost)));
+        string memory opHashBase64 = Base64.encode(bytes.concat(userOpHash));
+        string memory clientDataJSON = string.concat(clientDataJSONPre, opHashBase64, clientDataJSONPost);
+        bytes32 clientHash = sha256(bytes(clientDataJSON));
         bytes32 sigHash = sha256(bytes.concat(authenticatorData, clientHash));
 
         uint256[2] memory publicKey = authorisedKeys[rawKeyId];

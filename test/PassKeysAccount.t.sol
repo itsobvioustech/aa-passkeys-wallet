@@ -34,6 +34,7 @@ contract PassKeysAccountTest is Test {
         entryPoint.depositTo{value: 1e18}(address(account));
         vm.deal(address(account), 10e18);
         assertEq(address(account).balance, 10e18);
+        assertEq(address(account1).balance, 0);
 
         UserOperation memory userOp = UserOperation({
             sender: address(account),
@@ -52,15 +53,14 @@ contract PassKeysAccountTest is Test {
                 uint256(0x6d22541b920136ff5b2c59b4541890c2a402bae4e4db23ada3049393cd35bfdf),
                 bytes.concat(bytes32(0xf95bc73828ee210f9fd3bbe72d97908013b0a3759e9aea3d0ae318766cd2e1ad), bytes5(0x0500000000)),
                 string('{"type":"webauthn.get","challenge":"'),
-                string('","origin":"https://webauthn.me\","crossOrigin":false}')
+                string('","origin":"https://webauthn.me","crossOrigin":false}')
             )
         });
         UserOperation[] memory ops = new UserOperation[](1);
         ops[0] = userOp;
-        console2.logBytes32(entryPoint.getUserOpHash(userOp));
+        // console2.logBytes32(entryPoint.getUserOpHash(userOp));
         entryPoint.handleOps(ops, payable(address(account)));
-        assert(address(account).balance < 10e18);
         assertEq(address(account1).balance, 1e18);
-        // account.validateUserOp(userOp, userOp.hash(), 0);
+        assertEq(account.nonce(), 1);
     }
 }

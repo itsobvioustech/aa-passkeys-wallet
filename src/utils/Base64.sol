@@ -5,7 +5,7 @@ pragma solidity ^0.8.0;
 
 /**
  * @dev Provides a set of functions to operate with Base64 strings.
- *
+ *  modified for base64url https://datatracker.ietf.org/doc/html/rfc4648#section-5
  * _Available since v4.5._
  */
 library Base64 {

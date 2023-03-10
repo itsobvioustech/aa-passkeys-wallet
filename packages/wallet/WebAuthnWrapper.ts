@@ -3,6 +3,7 @@ import { AuthenticationEncoded, RegistrationEncoded } from '@passwordless-id/web
 import { BigNumber } from 'ethers'
 import { arrayify } from 'ethers/lib/utils'
 import { WebAuthnUtils } from './utils/WebAuthnUtils'
+import base64url from 'base64url';
 
 export interface IWebAuthnClient {
     register(challenge:string, name?:string): Promise<RegistrationEncoded>
@@ -26,7 +27,7 @@ export class PassKeyKeyPair {
     webAuthnClient: IWebAuthnClient
 
     constructor(keyId: string, pubKeyX: BigNumber, pubKeyY: BigNumber, webAuthnClient: IWebAuthnClient) {
-        this.rawId = BigNumber.from(utils.parseBase64url(keyId))
+        this.rawId = BigNumber.from(base64url.toBuffer(keyId))
         this.pubKeyX = pubKeyX
         this.pubKeyY = pubKeyY
         this.webAuthnClient = webAuthnClient
@@ -36,7 +37,7 @@ export class PassKeyKeyPair {
     async signChallenge(payload: string): Promise<PassKeySignature> {
         // ophash is a keccak256 hash of the user operation as a hex string
         // this needs to be base64url encoded from raw bytes of the hash
-        const challenge = utils.toBase64url(arrayify(payload))
+        const challenge = utils.toBase64url(arrayify(payload)).replace(/=/g, '')
 
         const authData = await this.webAuthnClient.authenticate(challenge, this.keyId)
         let sig = WebAuthnUtils.getMessageSignature(authData.signature)

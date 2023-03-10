@@ -3,7 +3,7 @@
       ".eslintrc.js"
     ],
     "compilerOptions": {
-      "target": "es2020",
+      "target": "ES6",
       "lib": [
         "dom",
         "dom.iterable",
@@ -17,7 +17,7 @@
       "strict": true,
       "forceConsistentCasingInFileNames": true,
       "noFallthroughCasesInSwitch": true,
-      "module": "commonjs",
+      "module": "ES6",
       "moduleResolution": "node",
       "resolveJsonModule": true,
       "isolatedModules": true,

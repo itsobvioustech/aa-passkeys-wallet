@@ -1,4 +1,3 @@
-import * as crypto from 'crypto';
 import { ec as EC } from 'elliptic';
 import base64url from 'base64url';
 import { ECDSASigValue } from '@peculiar/asn1-ecc';
@@ -17,23 +16,11 @@ enum COSEKEYS {
 
 const ec = new EC('p256');
 
-function toHash(data: crypto.BinaryLike, algo = 'SHA-256') {
-    return crypto.createHash(algo).update(data).digest();
-}
-
 function shouldRemoveLeadingZero(bytes: Uint8Array): boolean {
     return bytes[0] === 0x0 && (bytes[1] & (1 << 7)) !== 0;
 }
 
 export class WebAuthnUtils {
-
-    static getMessageHash(authenticatorData: string, clientDataJSON: string): BigNumber {
-        const authDataBuffer = base64url.toBuffer(authenticatorData);
-        const clientDataHash = toHash(base64url.toBuffer(clientDataJSON));
-        const signatureBase = Buffer.concat([authDataBuffer, clientDataHash]);
-        return BigNumber.from(toHash(signatureBase));
-    }
-
     static async getPublicKeyFromBytes(publicKeyBytes: string): Promise<BigNumber[]> {
         const cap = {
             name: 'ECDSA',

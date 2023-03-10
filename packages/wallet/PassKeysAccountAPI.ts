@@ -1,6 +1,7 @@
 import {
     BaseAccountAPI, BaseApiParams
 } from '@account-abstraction/sdk/dist/src/BaseAccountAPI'
+import { UserOperationStruct } from '@account-abstraction/contracts'
 import { BigNumber, BigNumberish } from 'ethers'
 import { defaultAbiCoder, arrayify, hexConcat } from 'ethers/lib/utils'
 import { 
@@ -74,9 +75,9 @@ export class PassKeysAccountApi extends BaseAccountAPI {
           ])
       }
     
-      async signUserOpHash(userOpHash: string): Promise<string> {
+    async signUserOpHash(userOpHash: string): Promise<string> {
         let sig = await this.passKeyPair.signChallenge(userOpHash)
-        return defaultAbiCoder.encode(['uint256', 'uint256', 'uint256', 'bytes', 'string', 'string'], [
+        let encodedSig = defaultAbiCoder.encode(['uint256', 'uint256', 'uint256', 'bytes', 'string', 'string'], [
             sig.id,
             sig.r,
             sig.s,
@@ -84,5 +85,36 @@ export class PassKeysAccountApi extends BaseAccountAPI {
             sig.clientDataPrefix,
             sig.clientDataSuffix
         ])
-      }    
+        return encodedSig
+    }    
+
+    /**
+     * return maximum gas used for verification.
+     * NOTE: createUnsignedUserOp will add to this value the cost of creation, if the contract is not yet created.
+     */
+    async getVerificationGasLimit (): Promise<BigNumberish> {
+        return 1000000
+    }
+
+    /**
+     * should cover cost of putting calldata on-chain, and some overhead.
+     * actual overhead depends on the expected bundle size
+     */
+    async getPreVerificationGas (userOp: Partial<UserOperationStruct>): Promise<number> {
+        const estimate = await super.getPreVerificationGas(userOp)
+        return estimate*100
+    }    
+    /**
+     * Sign the filled userOp.
+     * @param userOp the UserOperation to sign (with signature field ignored)
+     */
+    async signUserOp (userOp: UserOperationStruct): Promise<UserOperationStruct> {
+        const userOpHash = await this.getUserOpHash(userOp)
+        const signature = await this.signUserOpHash(userOpHash)
+        return {
+            ...userOp,
+            signature
+        }
+    }
+
 }

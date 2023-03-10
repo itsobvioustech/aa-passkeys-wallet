@@ -1,6 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity >=0.8.17;
 
+struct PassKeyId {
+    uint256 pubKeyX;
+    uint256 pubKeyY;
+    string keyId;
+}
+
 library Secp256r1 {
 
     uint256 constant gx = 0x6B17D1F2E12C4247F8BCE6E563A440F277037D812DEB33A0F4A13945D898C296;
@@ -20,7 +26,7 @@ library Secp256r1 {
     * @param S - signature half S
     * @param input - hashed message
     */
-    function Verify(uint256[2] calldata pubKey, uint r, uint s, uint e)
+    function Verify(PassKeyId calldata passKey, uint r, uint s, uint e)
         public returns (bool)
     {
         if (r >= nn || s >= nn) {
@@ -35,7 +41,7 @@ library Secp256r1 {
         uint x;
         uint y;
 
-        (x, y) = scalarMultiplications(pubKey[0], pubKey[1], u1, u2);
+        (x, y) = scalarMultiplications(passKey.pubKeyX, passKey.pubKeyY, u1, u2);
         return (x == r);
     }
 

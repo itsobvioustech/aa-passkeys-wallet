@@ -20,17 +20,18 @@ contract PassKeysAccountTest is Test {
 
     function testWalletDeployment() public {
         uint256[2] memory publicKey = [uint256(0x1), uint256(0x2)];
-        address wallet = factory.getAddress(0, 0, publicKey);
-        PassKeysAccount account = factory.createAccount(0, 0, publicKey);
+        address wallet = factory.getAddress(0, "test", publicKey[0], publicKey[1]);
+        PassKeysAccount account = factory.createAccount(0, "test", publicKey[0], publicKey[1]);
         assertEq(address(account), wallet);
-        PassKeysAccount account1 = factory.createAccount(1, 0, publicKey);
+        PassKeysAccount account1 = factory.createAccount(1, "test", publicKey[0], publicKey[1]);
         assert(address(account1) != address(account));
     }
 
     function testBasicWalletOps() public {
-        uint256[2] memory publicKey = [0x1b2b38be0987ec6cdb257eae91c00c7b3405e2bff0f56d60449da65347889c6d, 0x5569d27640ac65c77da042a9f47e6ac604d829970600663daf9d411636ba4c65];
-        PassKeysAccount account = factory.createAccount(0, 0x5cb950c17eb77b4a94a7ce72a610d9066c1b0da1e4c0f3866699c34a5edb2168, publicKey);
-        PassKeysAccount account1 = factory.createAccount(1, 0x5cb950c17eb77b4a94a7ce72a610d9066c1b0da1e4c0f3866699c34a5edb2168, publicKey);
+        uint256[2] memory publicKey = [0xfbf44f8e2d9d446231d2ee0ac7819c66f7a1c360630ead395c33ddce7d09553b, 
+                                       0x05ad53a14271446919a317847f59f8ef322411c95d504467bdaa12ea95344c1d];
+        PassKeysAccount account = factory.createAccount(0, "test", publicKey[0], publicKey[1]);
+        PassKeysAccount account1 = factory.createAccount(1, "test 1", publicKey[0], publicKey[1]);
         entryPoint.depositTo{value: 1e18}(address(account));
         vm.deal(address(account), 10e18);
         assertEq(address(account).balance, 10e18);
@@ -48,12 +49,12 @@ contract PassKeysAccountTest is Test {
             maxPriorityFeePerGas: 1,
             paymasterAndData: bytes(""),
             signature: abi.encode(
-                uint256(0x5cb950c17eb77b4a94a7ce72a610d9066c1b0da1e4c0f3866699c34a5edb2168),
-                uint256(0xd0860b14cff05bb244323ec118fd3110fd429993088f0e498945f1408a2f7700),
-                uint256(0x6d22541b920136ff5b2c59b4541890c2a402bae4e4db23ada3049393cd35bfdf),
+                keccak256(abi.encodePacked("test")),
+                uint256(0xc89034162e159e8fb36123813d0f1130847ac26be2b3bced86ec2b8fe5c0f8e1),
+                uint256(0x9b811c7d9b2bf63edfdc42ef479c2594b7da53f0a580bd082fdca98803d36ba5),
                 bytes.concat(bytes32(0xf95bc73828ee210f9fd3bbe72d97908013b0a3759e9aea3d0ae318766cd2e1ad), bytes5(0x0500000000)),
                 string('{"type":"webauthn.get","challenge":"'),
-                string('","origin":"https://webauthn.me","crossOrigin":false}')
+                string('","origin":"https://webauthn.me","crossOrigin":false,"other_keys_can_be_added_here":"do not compare clientDataJSON against a template. See https://goo.gl/yabPex"}')
             )
         });
         UserOperation[] memory ops = new UserOperation[](1);

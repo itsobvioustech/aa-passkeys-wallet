@@ -1,12 +1,12 @@
 import { utils, parsers } from '@passwordless-id/webauthn'
-import { AuthenticationEncoded, RegistrationEncoded } from '@passwordless-id/webauthn/dist/esm/types'
+import { AuthenticationEncoded, RegistrationEncoded, RegisterOptions } from '@passwordless-id/webauthn/dist/esm/types'
 import { BigNumber } from 'ethers'
 import { arrayify } from 'ethers/lib/utils'
 import { WebAuthnUtils } from './utils/WebAuthnUtils'
 import base64url from 'base64url';
 
 export interface IWebAuthnClient {
-    register(challenge:string, name?:string): Promise<RegistrationEncoded>
+    register(challenge:string, name?:string, options?:RegisterOptions ): Promise<RegistrationEncoded>
     authenticate(challenge: string, keyid?: string): Promise<AuthenticationEncoded>
 }
 
@@ -25,13 +25,22 @@ export class PassKeyKeyPair {
     pubKeyY: BigNumber
     keyId: string
     webAuthnClient: IWebAuthnClient
+    name?: string
+    aaguid?: string
+    manufacturer?: string
+    regTime?: EpochTimeStamp
 
-    constructor(keyId: string, pubKeyX: BigNumber, pubKeyY: BigNumber, webAuthnClient: IWebAuthnClient) {
+    constructor(keyId: string, pubKeyX: BigNumber, pubKeyY: BigNumber, webAuthnClient: IWebAuthnClient,
+                name?: string, aaguid?: string, manufacturer?: string, regTime?: EpochTimeStamp) {
         this.rawId = BigNumber.from(base64url.toBuffer(keyId))
         this.pubKeyX = pubKeyX
         this.pubKeyY = pubKeyY
         this.webAuthnClient = webAuthnClient
         this.keyId = keyId
+        this.name = name
+        this.aaguid = aaguid
+        this.manufacturer = manufacturer
+        this.regTime = regTime
     }
 
     async signChallenge(payload: string): Promise<PassKeySignature> {
@@ -65,9 +74,12 @@ export class WebAuthnWrapper {
     }
 
     public async registerPassKey(payload: string, name?:string): Promise<PassKeyKeyPair> {
-        const regData = await this.webAuthnClient.register(payload, name);
+        const regData = await this.webAuthnClient.register(payload, name, 
+            {userVerification: 'required', authenticatorType: 'both', attestation: true});
         const parsedData = parsers.parseRegistration(regData);
+    
         let pkey = await WebAuthnUtils.getPublicKeyFromBytes(parsedData.credential.publicKey);
-        return new PassKeyKeyPair(parsedData.credential.id, pkey[0], pkey[1], this.webAuthnClient);
+        return new PassKeyKeyPair(parsedData.credential.id, pkey[0], pkey[1], this.webAuthnClient, 
+            name, parsedData.authenticator.aaguid, parsedData.authenticator.name, Date.now());
     }
 }

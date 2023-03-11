@@ -44,6 +44,9 @@ export class PassKeysAccountApi extends BaseAccountAPI {
                 throw new Error('factoryAddress is not set')
             }
         }
+        if (this.passKeyPair.pubKeyX.isZero() || this.passKeyPair.pubKeyY.isZero()) {
+            throw new Error('Cannot initialise with this passkey')
+        }
         return hexConcat([
             this.factoryContract.address,
             this.factoryContract.interface.encodeFunctionData("createAccount", [
@@ -53,6 +56,10 @@ export class PassKeysAccountApi extends BaseAccountAPI {
                 this.passKeyPair.pubKeyY
             ])
         ])
+    }
+
+    changePassKeyPair(passKeyPair: PassKeyKeyPair) {
+        this.passKeyPair = passKeyPair
     }
 
     async getNonce (): Promise<BigNumber> {

@@ -53,6 +53,7 @@ contract PassKeysAccount is SimpleAccount, IPassKeysAccount {
     }
 
     function removePassKey(string calldata _keyId) external onlyOwner {
+        require(knownKeyHashes.length > 1, "Cannot remove the last key");
         bytes32 keyHash = keccak256(abi.encodePacked(_keyId));
         PassKeyId memory passKey = authorisedKeys[keyHash];
         if (passKey.pubKeyX == 0 && passKey.pubKeyY == 0) {

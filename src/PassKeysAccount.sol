@@ -33,7 +33,7 @@ contract PassKeysAccount is SimpleAccount, IPassKeysAccount {
      * @param _pubKeyX public key X val from a passkey that will have a full ownership and control of this account.
      * @param _pubKeyY public key X val from a passkey that will have a full ownership and control of this account.
      */
-    function addPassKey(string calldata _keyId, uint256 _pubKeyX, uint256 _pubKeyY) public onlyOwner {
+    function addPassKey(string calldata _keyId, uint256 _pubKeyX, uint256 _pubKeyY) external onlyOwner {
         _addPassKey(keccak256(abi.encodePacked(_keyId)), _pubKeyX, _pubKeyY, _keyId);
     }
 
@@ -52,20 +52,21 @@ contract PassKeysAccount is SimpleAccount, IPassKeysAccount {
         return knownKeys;
     }
 
-    function removePassKey(bytes32 _keyHash) public onlyOwner {
-        PassKeyId memory passKey = authorisedKeys[_keyHash];
+    function removePassKey(string calldata _keyId) external onlyOwner {
+        bytes32 keyHash = keccak256(abi.encodePacked(_keyId));
+        PassKeyId memory passKey = authorisedKeys[keyHash];
         if (passKey.pubKeyX == 0 && passKey.pubKeyY == 0) {
             return;
         }
-        delete authorisedKeys[_keyHash];
+        delete authorisedKeys[keyHash];
         for (uint256 i = 0; i < knownKeyHashes.length; i++) {
-            if (knownKeyHashes[i] == _keyHash) {
+            if (knownKeyHashes[i] == keyHash) {
                 knownKeyHashes[i] = knownKeyHashes[knownKeyHashes.length - 1];
                 knownKeyHashes.pop();
                 break;
             }
         }
-        emit PublicKeyRemoved(_keyHash, passKey.pubKeyX, passKey.pubKeyY, passKey.keyId);
+        emit PublicKeyRemoved(keyHash, passKey.pubKeyX, passKey.pubKeyY, passKey.keyId);
     }
 
     function _validateSignature(UserOperation calldata userOp, bytes32 userOpHash)

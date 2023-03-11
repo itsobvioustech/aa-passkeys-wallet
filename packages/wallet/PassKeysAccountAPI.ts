@@ -48,10 +48,9 @@ export class PassKeysAccountApi extends BaseAccountAPI {
             this.factoryContract.address,
             this.factoryContract.interface.encodeFunctionData("createAccount", [
                 this.index, 
-                this.passKeyPair.rawId, [
-                    this.passKeyPair.pubKeyX, 
-                    this.passKeyPair.pubKeyY
-                ]
+                this.passKeyPair.keyId, 
+                this.passKeyPair.pubKeyX, 
+                this.passKeyPair.pubKeyY
             ])
         ])
     }
@@ -77,7 +76,7 @@ export class PassKeysAccountApi extends BaseAccountAPI {
     
     async signUserOpHash(userOpHash: string): Promise<string> {
         let sig = await this.passKeyPair.signChallenge(userOpHash)
-        let encodedSig = defaultAbiCoder.encode(['uint256', 'uint256', 'uint256', 'bytes', 'string', 'string'], [
+        let encodedSig = defaultAbiCoder.encode(['bytes32', 'uint256', 'uint256', 'bytes', 'string', 'string'], [
             sig.id,
             sig.r,
             sig.s,
@@ -109,6 +108,7 @@ export class PassKeysAccountApi extends BaseAccountAPI {
      * @param userOp the UserOperation to sign (with signature field ignored)
      */
     async signUserOp (userOp: UserOperationStruct): Promise<UserOperationStruct> {
+        console.log("Signing UserOp", userOp)
         const userOpHash = await this.getUserOpHash(userOp)
         const signature = await this.signUserOpHash(userOpHash)
         return {

@@ -1,7 +1,7 @@
 import { utils, parsers } from '@passwordless-id/webauthn'
 import { AuthenticationEncoded, RegistrationEncoded, RegisterOptions } from '@passwordless-id/webauthn/dist/esm/types'
 import { BigNumber } from 'ethers'
-import { arrayify } from 'ethers/lib/utils'
+import { arrayify, keccak256 } from 'ethers/lib/utils'
 import { WebAuthnUtils } from './utils/WebAuthnUtils'
 import base64url from 'base64url';
 
@@ -20,7 +20,7 @@ export interface PassKeySignature {
 }
 
 export class PassKeyKeyPair {
-    rawId: BigNumber
+    keyHash: BigNumber
     pubKeyX: BigNumber
     pubKeyY: BigNumber
     keyId: string
@@ -32,7 +32,7 @@ export class PassKeyKeyPair {
 
     constructor(keyId: string, pubKeyX: BigNumber, pubKeyY: BigNumber, webAuthnClient: IWebAuthnClient,
                 name?: string, aaguid?: string, manufacturer?: string, regTime?: EpochTimeStamp) {
-        this.rawId = BigNumber.from(base64url.toBuffer(keyId))
+        this.keyHash = BigNumber.from(keccak256(new TextEncoder().encode(keyId)))
         this.pubKeyX = pubKeyX
         this.pubKeyY = pubKeyY
         this.webAuthnClient = webAuthnClient
@@ -56,7 +56,7 @@ export class PassKeyKeyPair {
         let challengeSuffix = clientDataJSON.substring(challengePos + challenge.length)
         let authenticatorData = new Uint8Array(utils.parseBase64url(authData.authenticatorData))
         return {
-            id: this.rawId,
+            id: this.keyHash,
             r: sig[0],
             s: sig[1],
             authData: authenticatorData,
@@ -75,7 +75,7 @@ export class WebAuthnWrapper {
 
     public async registerPassKey(payload: string, name?:string): Promise<PassKeyKeyPair> {
         const regData = await this.webAuthnClient.register(payload, name, 
-            {userVerification: 'required', authenticatorType: 'both', attestation: true});
+            {authenticatorType: 'both'});
         const parsedData = parsers.parseRegistration(regData);
     
         let pkey = await WebAuthnUtils.getPublicKeyFromBytes(parsedData.credential.publicKey);

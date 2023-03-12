@@ -1,5 +1,5 @@
 import { utils, parsers } from '@passwordless-id/webauthn'
-import { AuthenticationEncoded, RegistrationEncoded, RegisterOptions } from '@passwordless-id/webauthn/dist/esm/types'
+import { AuthenticationEncoded, RegistrationEncoded, RegisterOptions, AuthenticateOptions } from '@passwordless-id/webauthn/dist/esm/types'
 import { BigNumber } from 'ethers'
 import { arrayify, keccak256 } from 'ethers/lib/utils'
 import { WebAuthnUtils } from './utils/WebAuthnUtils'
@@ -7,7 +7,7 @@ import base64url from 'base64url';
 
 export interface IWebAuthnClient {
     register(challenge:string, name?:string, options?:RegisterOptions ): Promise<RegistrationEncoded>
-    authenticate(challenge: string, keyid?: string): Promise<AuthenticationEncoded>
+    authenticate(challenge: string, keyid?: string, options?: AuthenticateOptions): Promise<AuthenticationEncoded>
 }
 
 export interface PassKeySignature {
@@ -48,7 +48,7 @@ export class PassKeyKeyPair {
         // this needs to be base64url encoded from raw bytes of the hash
         const challenge = utils.toBase64url(arrayify(payload)).replace(/=/g, '')
 
-        const authData = await this.webAuthnClient.authenticate(challenge, this.keyId)
+        const authData = await this.webAuthnClient.authenticate(challenge, this.keyId, {userVerification: 'required'})
         let sig = WebAuthnUtils.getMessageSignature(authData.signature)
         let clientDataJSON = new TextDecoder().decode(utils.parseBase64url(authData.clientData))
         let challengePos = clientDataJSON.indexOf(challenge)
@@ -75,7 +75,7 @@ export class WebAuthnWrapper {
 
     public async registerPassKey(payload: string, name?:string): Promise<PassKeyKeyPair> {
         const regData = await this.webAuthnClient.register(payload, name, 
-            {authenticatorType: 'both'});
+            {authenticatorType: 'both', userVerification: 'required'});
         const parsedData = parsers.parseRegistration(regData);
     
         let pkey = await WebAuthnUtils.getPublicKeyFromBytes(parsedData.credential.publicKey);

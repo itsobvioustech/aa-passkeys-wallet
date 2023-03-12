@@ -4,6 +4,7 @@ out/
 artifacts/
 typechain-types/
 build/
+deploy/
 
 # Ignores development broadcast logs
 /broadcast

@@ -1,14 +1,16 @@
 {
-  "name": "aa-passkeys-wallet",
+  "name": "@itsobvioustech/aa-passkeys-wallet",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "./dist/index.js",
   "directories": {
     "lib": "lib",
     "test": "test"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "typechain": "typechain --target=ethers-v5 --out-dir typechain-types ./out/**/*.json",
+    "build": "tsc index.ts -d true -t es6 -m es6 --moduleResolution node --outDir ./build"
   },
   "author": "",
   "license": "ISC",

@@ -2,7 +2,7 @@
   "name": "@itsobvioustech/aa-passkeys-wallet",
   "version": "1.0.0",
   "description": "",
-  "main": "./dist/index.js",
+  "main": "./build/index.js",
   "directories": {
     "lib": "lib",
     "test": "test"

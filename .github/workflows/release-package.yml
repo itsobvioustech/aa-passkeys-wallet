@@ -47,6 +47,7 @@ jobs:
         id: forge-build
       - run: npm ci
       - run: npm run typechain
+      - run: ls -al .
       - run: npm run build
       - run: npm publish
         env:

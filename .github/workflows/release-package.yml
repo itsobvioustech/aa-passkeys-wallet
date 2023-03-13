@@ -21,7 +21,7 @@ jobs:
       - name: Run Forge build
         run: |
           forge --version
-          forge build --sizes --skip test --skip script
+          forge test -vvv
         id: forge-build
 
   publish-gpr:
@@ -36,6 +36,15 @@ jobs:
         with:
           node-version: 18
           registry-url: https://npm.pkg.github.com/
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
+      - name: Run Forge build
+        run: |
+          forge --version
+          forge build --sizes --skip test --skip script
+        id: forge-build
       - run: npm ci
       - run: npm run typechain
       - run: npm run build

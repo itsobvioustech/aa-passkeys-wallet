@@ -6,7 +6,8 @@ broadcast
 .secret
 .git*
 deploy
-*.sol
+script
+test
 /typechain-types
 cache
 remappings.txt

@@ -36,6 +36,7 @@ jobs:
         with:
           node-version: 18
           registry-url: https://npm.pkg.github.com/
+      - run: npm run typechain
       - run: npm run build
       - run: npm publish
         env:

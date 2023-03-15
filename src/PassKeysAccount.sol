@@ -7,7 +7,6 @@ import "./IPassKeysAccount.sol";
 import "./Secp256r1.sol";
 
 contract PassKeysAccount is SimpleAccount, IPassKeysAccount {
-    using Secp256r1 for PassKeyId;
     mapping(bytes32 => PassKeyId) private authorisedKeys;
     bytes32[] private knownKeyHashes;
 
@@ -82,7 +81,7 @@ contract PassKeysAccount is SimpleAccount, IPassKeysAccount {
 
         PassKeyId memory passKey = authorisedKeys[keyHash];
         require(passKey.pubKeyY != 0 && passKey.pubKeyY != 0, "Key not found");
-        require(passKey.Verify(sigx, sigy, uint256(sigHash)), "Invalid signature");
+        require(Secp256r1.Verify(passKey, sigx, sigy, uint256(sigHash)), "Invalid signature");
         return 0;
     }
 

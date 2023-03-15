@@ -25,8 +25,8 @@ contract ExternalScript is Script {
 contract Deployer is Script {
     function deploy(uint256 _pkey) public {
         vm.startBroadcast(_pkey);
-        EntryPoint entryPoint = new EntryPoint{salt: bytes32(0)}();
-        PassKeysAccountFactory factory = new PassKeysAccountFactory{salt: bytes32(0)}(entryPoint);
+        EntryPoint entryPoint = new EntryPoint{salt: bytes32("1")}();
+        PassKeysAccountFactory factory = new PassKeysAccountFactory{salt: bytes32("1")}(entryPoint);
         vm.stopBroadcast();
         console2.log("EntryPoint", address(entryPoint));
         console2.log("PassKeysAccountFactory", address(factory));

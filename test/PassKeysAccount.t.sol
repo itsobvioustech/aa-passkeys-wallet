@@ -50,11 +50,11 @@ contract PassKeysAccountTest is Test {
             paymasterAndData: bytes(""),
             signature: abi.encode(
                 keccak256(abi.encodePacked("test")),
-                uint256(0xc89034162e159e8fb36123813d0f1130847ac26be2b3bced86ec2b8fe5c0f8e1),
-                uint256(0x9b811c7d9b2bf63edfdc42ef479c2594b7da53f0a580bd082fdca98803d36ba5),
+                uint256(0xf82c205e454ad6465167d6d78c1e4180736dad2259fd014720eb41287e58beed),
+                uint256(0x489e15f2b0e9fd6fc46cb8d7101a0dc0bce9ffc41e08c0a1f4b49c31182cb648),
                 bytes.concat(bytes32(0xf95bc73828ee210f9fd3bbe72d97908013b0a3759e9aea3d0ae318766cd2e1ad), bytes5(0x0500000000)),
                 string('{"type":"webauthn.get","challenge":"'),
-                string('","origin":"https://webauthn.me","crossOrigin":false,"other_keys_can_be_added_here":"do not compare clientDataJSON against a template. See https://goo.gl/yabPex"}')
+                string('","origin":"https://webauthn.me","crossOrigin":false}')
             )
         });
         UserOperation[] memory ops = new UserOperation[](1);

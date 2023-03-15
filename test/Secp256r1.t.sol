@@ -15,13 +15,13 @@ contract Secp256r1Test is Test {
 
 
     function testCheckSignature() public {
-        bool validate = Q.Verify(rs[0], rs[1], uint256(messageHash));
+        bool validate = Secp256r1.Verify(Q, rs[0], rs[1], uint256(messageHash));
         assertTrue(validate);
 
         messageHash = 0xf5a9b843ef6ed11fecc9170bd861512f56b342dd7270325228015d821925d915;
         rs = [0x8efa9b1e7bc5ecf43cbaccf2205daf40f60b19b88912d5d2b7dc63db2ecfdde9,0x044a33ff15f58ebcdf978a46bd930e2ad054f8412b4eca55ae61297d24d72a2a];
         Q = PassKeyId(0xba5fcb538285326ed0e6fcdd2e95331d49029495d07840088b6919a379b17c89,0x874391cc36d7336ecaa23658e0b0aaf64212e9445eb241b0b81517276aea0b68, "test");
-        validate = Q.Verify(rs[0], rs[1], uint256(messageHash));
+        validate = Secp256r1.Verify(Q, rs[0], rs[1], uint256(messageHash));
         assertTrue(validate);
     }
 

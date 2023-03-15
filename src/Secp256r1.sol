@@ -26,8 +26,8 @@ library Secp256r1 {
     * @param S - signature half S
     * @param input - hashed message
     */
-    function Verify(PassKeyId calldata passKey, uint r, uint s, uint e)
-        public returns (bool)
+    function Verify(PassKeyId memory passKey, uint r, uint s, uint e)
+        internal returns (bool)
     {
         if (r >= nn || s >= nn) {
             return false;
@@ -50,7 +50,7 @@ library Secp256r1 {
     * @description - performs a number of EC operations required in te pk signature verification
     */
     function scalarMultiplications(uint X, uint Y, uint u1, uint u2) 
-        public returns(uint, uint)
+        internal returns(uint, uint)
     {
         uint x1;
         uint y1;
@@ -67,23 +67,6 @@ library Secp256r1 {
 
         return _affineFromJacobian(x1, y1, z1);
     }
-
-    function Add(uint p1, uint p2, uint q1, uint q2) 
-        public returns(uint, uint)
-    {
-        uint p3;
-        (p1, p2, p3) = _jAdd(p1, p2, uint(1), q1, q2, uint(1));
-
-        return _affineFromJacobian(p1, p2, p3);
-    }
-
-    function Double(uint p1, uint p2) 
-        public returns(uint, uint)
-    {
-        uint p3;
-        (p1, p2, p3) = _modifiedJacobianDouble(p1, p2, uint(1));
-        return _affineFromJacobian(p1, p2, p3);
-    }
  
     /*
     * ScalarMult
@@ -91,7 +74,7 @@ library Secp256r1 {
     * crypto/elliptic library
     */
     function ScalarMult(uint Bx, uint By, uint k)
-        public returns (uint, uint)
+        internal returns (uint, uint)
     {
         uint x = 0;
         uint y = 0;
@@ -102,7 +85,7 @@ library Secp256r1 {
     }
 
     function ScalarMultJacobian(uint Bx, uint By, uint k)
-        public pure returns (uint, uint, uint)
+        internal pure returns (uint, uint, uint)
     {
         uint Bz = 1;
         uint x = 0;
@@ -120,19 +103,8 @@ library Secp256r1 {
         return (x, y, z);
     }
 
-    /*
-    * ScalarBaseMult
-    * @description performs scalar multiplication of two elliptic curve points, based on golang
-    * crypto/elliptic library
-    */
-    function ScalarBaseMult(uint k)
-        public returns (uint, uint)
-    {
-        return ScalarMult(gx, gy, k);
-    }
-
     function ScalarBaseMultJacobian(uint k)
-        public pure returns (uint, uint, uint)
+        internal pure returns (uint, uint, uint)
     {
         return ScalarMultJacobian(gx, gy, k);
     }
@@ -143,7 +115,7 @@ library Secp256r1 {
     * golang elliptic/crypto library
     */
     function _affineFromJacobian(uint x, uint y, uint z)
-        public returns(uint ax, uint ay)
+        internal returns(uint ax, uint ay)
     {
         if (z==0) {
             return (0, 0);
@@ -162,7 +134,7 @@ library Secp256r1 {
     * https://hyperelliptic.org/EFD/g1p/auto-code/shortw/jacobian-3/doubling/mdbl-2007-bl.op3
     */
     function _jAdd(uint p1, uint p2, uint p3, uint q1, uint q2, uint q3)
-        public pure returns(uint r1, uint r2, uint r3)    
+        internal pure returns(uint r1, uint r2, uint r3)    
     {
         if (p3 == 0) {
             r1 = q1;
@@ -241,7 +213,7 @@ library Secp256r1 {
     // Point doubling on the modified jacobian coordinates
     // http://point-at-infinity.org/ecc/Prime_Curve_Modified_Jacobian_Coordinates.html
     function _modifiedJacobianDouble(uint x, uint y, uint z) 
-        public pure returns (uint x3, uint y3, uint z3)
+        internal pure returns (uint x3, uint y3, uint z3)
     {
         assembly {
             let pd := 0xFFFFFFFF00000001000000000000000000000000FFFFFFFFFFFFFFFFFFFFFFFF
@@ -269,28 +241,8 @@ library Secp256r1 {
         }
     }
 
-    function _hashToUint(bytes memory input) 
-        public pure returns (uint)
-    {
-        require(input.length >= 32, "slicing out of range");
-        uint x;
-        assembly {
-            x := mload(add(input, 0x20))
-        }
-        return x;
-    }
-
-    function toBytes(uint256 input) internal pure returns (bytes memory out) {
-        out = new bytes(32);
-        assembly {
-            mstore(add(out, 32), input)
-        }
-
-        return out;
-    }
-
     function _primemod(uint value, uint p)
-        public returns (uint ret)
+        internal returns (uint ret)
     {
         ret = modexp(value, p-2, p);
         return ret;

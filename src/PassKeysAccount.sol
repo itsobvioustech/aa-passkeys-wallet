@@ -44,10 +44,10 @@ contract PassKeysAccount is SimpleAccount, IPassKeysAccount {
     }
 
     /// @inheritdoc IPassKeysAccount
-    function getAuthorisedKeys() external view override returns (string[] memory knownKeys){
-        knownKeys = new string[](knownKeyHashes.length);
+    function getAuthorisedKeys() external view override returns (PassKeyId[] memory knownKeys){
+        knownKeys = new PassKeyId[](knownKeyHashes.length);
         for (uint256 i = 0; i < knownKeyHashes.length; i++) {
-            knownKeys[i] = authorisedKeys[knownKeyHashes[i]].keyId;
+            knownKeys[i] = authorisedKeys[knownKeyHashes[i]];
         }
         return knownKeys;
     }

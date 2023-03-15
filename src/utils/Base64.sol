@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 // OpenZeppelin Contracts (last updated v4.7.0) (utils/Base64.sol)
+// modified for base64url encoding, does not pad with '='
 
 pragma solidity ^0.8.0;
 

@@ -1,6 +1,13 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity >=0.8.17;
-
+// 
+// Heavily inspired from 
+// https://github.com/maxrobot/elliptic-solidity/blob/master/contracts/Secp256r1.sol
+// https://github.com/tdrerup/elliptic-curve-solidity/blob/master/contracts/curves/EllipticCurve.sol
+// modified to use precompile 0x05 modexp
+// and modified jacobian double
+// optimisations to avoid to an from from affine and jacobian coordinates
+// 
 struct PassKeyId {
     uint256 pubKeyX;
     uint256 pubKeyY;

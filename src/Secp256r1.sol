@@ -23,6 +23,7 @@ library Secp256r1 {
     uint256 public constant nn = 0xFFFFFFFF00000000FFFFFFFFFFFFFFFFBCE6FAADA7179E84F3B9CAC2FC632551;
     uint256 constant a = 0xFFFFFFFF00000001000000000000000000000000FFFFFFFFFFFFFFFFFFFFFFFC;
     uint256 constant b = 0x5AC635D8AA3A93E7B3EBBD55769886BC651D06B0CC53B0F63BCE3C3E27D2604B;
+    uint256 constant MOST_SIGNIFICANT = 0x8000000000000000000000000000000000000000000000000000000000000000;
 
     /*
     * Verify
@@ -63,16 +64,51 @@ library Secp256r1 {
         uint y1;
         uint z1;
 
-        uint x2;
-        uint y2;
-        uint z2;
+        // uint x2;
+        // uint y2;
+        // uint z2;
 
-        (x1, y1, z1) = ScalarBaseMultJacobian(u1);
-        (x2, y2, z2) = ScalarMultJacobian(X, Y, u2);
+        // (x1, y1, z1) = ScalarBaseMultJacobian(u1);
+        // (x2, y2, z2) = ScalarMultJacobian(X, Y, u2);
+        // (x1, y1, z1) = _jAdd(x1, y1, z1, x2, y2, z2);
+        uint pqx;
+        uint pqy;
+        uint pqz;
+        (pqx, pqy, pqz) = _jAdd(gx, gy, 1, X, Y, 1);
 
-        (x1, y1, z1) = _jAdd(x1, y1, z1, x2, y2, z2);
+
+        (x1, y1, z1) = ShamirMultJacobian(X, Y, u1, u2, pqx, pqy, pqz);
+
 
         return _affineFromJacobian(x1, y1, z1);
+    }
+
+    /*
+    * Strauss Shamir trick for EC multiplication
+    * https://stackoverflow.com/questions/50993471/ec-scalar-multiplication-with-strauss-shamir-method
+    */
+    function ShamirMultJacobian(uint X, uint Y, uint u1, uint u2, uint pqx, uint pqy, uint pqz) internal pure returns (uint, uint, uint) {
+        uint x = 0;
+        uint y = 0;
+        uint z = 0;
+        uint bits = 256;
+
+        while (bits > 0) {
+            if (z > 0) {
+                (x, y, z) = _modifiedJacobianDouble(x, y, z);
+            }
+            if ((u1 & MOST_SIGNIFICANT > 0) && (u2 & MOST_SIGNIFICANT > 0)) {
+                (x, y, z) = _jAdd(x, y, z, pqx, pqy, pqz);
+            } else if (u1 & MOST_SIGNIFICANT > 0) {
+                (x, y, z) = _jAdd(x, y, z, gx, gy, 1);
+            } else if (u2 & MOST_SIGNIFICANT > 0) {
+                (x, y, z) = _jAdd(x, y, z, X, Y, 1);
+            }
+            u1 = u1 << 1;
+            u2 = u2 << 1;
+            bits--;
+        }
+        return (x, y, z);
     }
  
     /*

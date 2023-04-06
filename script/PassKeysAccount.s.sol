@@ -32,3 +32,17 @@ contract Deployer is Script {
         console2.log("PassKeysAccountFactory", address(factory));
     }
 }
+
+contract ExternalUpgradeScript is Script {
+    function run() public {
+        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        console2.log("deployerKey", vm.addr(deployerPrivateKey));
+        address entryPointAddr = vm.envAddress("ENTRY_POINT");
+        bytes32 salt = vm.envBytes32("SALT");
+        vm.startBroadcast(deployerPrivateKey);
+        EntryPoint entryPoint = EntryPoint(payable(entryPointAddr));
+        PassKeysAccountFactory factory = new PassKeysAccountFactory{salt: bytes32(salt)}(entryPoint);
+        vm.stopBroadcast();
+        console2.log("PassKeysAccountFactory", address(factory));
+    }
+}

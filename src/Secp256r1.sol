@@ -14,6 +14,12 @@ struct PassKeyId {
     string keyId;
 }
 
+struct JPoint {
+    uint256 x;
+    uint256 y;
+    uint256 z;
+}
+
 library Secp256r1 {
 
     uint256 constant gx = 0x6B17D1F2E12C4247F8BCE6E563A440F277037D812DEB33A0F4A13945D898C296;
@@ -23,7 +29,7 @@ library Secp256r1 {
     uint256 public constant nn = 0xFFFFFFFF00000000FFFFFFFFFFFFFFFFBCE6FAADA7179E84F3B9CAC2FC632551;
     uint256 constant a = 0xFFFFFFFF00000001000000000000000000000000FFFFFFFFFFFFFFFFFFFFFFFC;
     uint256 constant b = 0x5AC635D8AA3A93E7B3EBBD55769886BC651D06B0CC53B0F63BCE3C3E27D2604B;
-    uint256 constant MOST_SIGNIFICANT = 0x8000000000000000000000000000000000000000000000000000000000000000;
+    uint256 constant MOST_SIGNIFICANT = 0xc000000000000000000000000000000000000000000000000000000000000000;
 
     /*
     * Verify
@@ -71,13 +77,8 @@ library Secp256r1 {
         // (x1, y1, z1) = ScalarBaseMultJacobian(u1);
         // (x2, y2, z2) = ScalarMultJacobian(X, Y, u2);
         // (x1, y1, z1) = _jAdd(x1, y1, z1, x2, y2, z2);
-        uint pqx;
-        uint pqy;
-        uint pqz;
-        (pqx, pqy, pqz) = _jAdd(gx, gy, 1, X, Y, 1);
 
-
-        (x1, y1, z1) = ShamirMultJacobian(X, Y, u1, u2, pqx, pqy, pqz);
+        (x1, y1, z1) = ShamirMultJacobian(X, Y, u1, u2);
 
 
         return _affineFromJacobian(x1, y1, z1);
@@ -86,29 +87,80 @@ library Secp256r1 {
     /*
     * Strauss Shamir trick for EC multiplication
     * https://stackoverflow.com/questions/50993471/ec-scalar-multiplication-with-strauss-shamir-method
+    * we optimise on this a bit to do with 2 bits at a time rather than a single bit
+    * the individual points for a single pass are precomputed
+    * overall this reduces the number of additions while keeping the same number of doublings
     */
-    function ShamirMultJacobian(uint X, uint Y, uint u1, uint u2, uint pqx, uint pqy, uint pqz) internal pure returns (uint, uint, uint) {
+    function ShamirMultJacobian(uint X, uint Y, uint u1, uint u2) internal pure returns (uint, uint, uint) {
         uint x = 0;
         uint y = 0;
         uint z = 0;
-        uint bits = 256;
+        uint bits = 128;
+        uint index = 0;
+        // precompute the points
+        JPoint[] memory points = _preComputeJacobianPoints(X, Y);
 
         while (bits > 0) {
             if (z > 0) {
                 (x, y, z) = _modifiedJacobianDouble(x, y, z);
+                (x, y, z) = _modifiedJacobianDouble(x, y, z);
             }
-            if ((u1 & MOST_SIGNIFICANT > 0) && (u2 & MOST_SIGNIFICANT > 0)) {
-                (x, y, z) = _jAdd(x, y, z, pqx, pqy, pqz);
-            } else if (u1 & MOST_SIGNIFICANT > 0) {
-                (x, y, z) = _jAdd(x, y, z, gx, gy, 1);
-            } else if (u2 & MOST_SIGNIFICANT > 0) {
-                (x, y, z) = _jAdd(x, y, z, X, Y, 1);
+            index = ((u1 & MOST_SIGNIFICANT) >> 252) | ((u2 & MOST_SIGNIFICANT) >> 254);
+            if (index > 0) {
+                (x, y, z) = _jAdd(x, y, z, points[index].x, points[index].y, points[index].z);
             }
-            u1 = u1 << 1;
-            u2 = u2 << 1;
+            u1 <<= 2;
+            u2 <<= 2;
             bits--;
         }
         return (x, y, z);
+    }
+
+    function _preComputeJacobianPoints(uint X, uint Y) internal pure returns (JPoint[] memory points) {
+        JPoint[] memory u1Points = new JPoint[](4);
+        u1Points[0] = JPoint(0, 0, 0);
+        u1Points[1] = JPoint(gx, gy, 1); // u1
+        u1Points[2] = _jPointDouble(u1Points[1]);
+        u1Points[3] = _jPointAdd(u1Points[1], u1Points[2]);
+
+        points = new JPoint[](16);
+        points[0] = JPoint(0, 0, 0);
+        points[1] = JPoint(X, Y, 1); // u2
+        points[2] = _jPointDouble(points[1]);
+        points[3] = _jPointAdd(points[1], points[2]);
+
+        points[4] = u1Points[1];
+        points[5] = _jPointAdd(u1Points[1], points[1]);
+        points[6] = _jPointAdd(u1Points[1], points[2]);
+        points[7] = _jPointAdd(u1Points[1], points[3]);
+
+        points[8] = u1Points[2];
+        points[9] = _jPointAdd(u1Points[2], points[1]);
+        points[10] = _jPointAdd(u1Points[2], points[2]);
+        points[11] = _jPointAdd(u1Points[2], points[3]);
+
+        points[12] = u1Points[3];
+        points[13] = _jPointAdd(u1Points[3], points[1]);
+        points[14] = _jPointAdd(u1Points[3], points[2]);
+        points[15] = _jPointAdd(u1Points[3], points[3]);
+
+        return points;
+    }
+
+    function _jPointAdd(JPoint memory p1, JPoint memory p2) internal pure returns (JPoint memory) {
+        uint x;
+        uint y;
+        uint z;
+        (x, y, z) = _jAdd(p1.x, p1.y, p1.z, p2.x, p2.y, p2.z);
+        return JPoint(x, y, z);
+    }
+
+    function _jPointDouble(JPoint memory p) internal pure returns (JPoint memory) {
+        uint x;
+        uint y;
+        uint z;
+        (x, y, z) = _modifiedJacobianDouble(p.x, p.y, p.z);
+        return JPoint(x, y, z);
     }
  
     /*

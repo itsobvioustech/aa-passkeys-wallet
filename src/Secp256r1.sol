@@ -117,11 +117,13 @@ library Secp256r1 {
     }
 
     function _preComputeJacobianPoints(uint X, uint Y) internal pure returns (JPoint[] memory points) {
-        JPoint[] memory u1Points = new JPoint[](4);
-        u1Points[0] = JPoint(0, 0, 0);
-        u1Points[1] = JPoint(gx, gy, 1); // u1
-        u1Points[2] = _jPointDouble(u1Points[1]);
-        u1Points[3] = _jPointAdd(u1Points[1], u1Points[2]);
+        // JPoint[] memory u1Points = new JPoint[](4);
+        // u1Points[0] = JPoint(0, 0, 0);
+        // u1Points[1] = JPoint(gx, gy, 1); // u1
+        // u1Points[2] = _jPointDouble(u1Points[1]);
+        // u1Points[3] = _jPointAdd(u1Points[1], u1Points[2]);
+        // avoiding this intermediate step by using it in a single array below
+        // these are pre computed points for u1
 
         points = new JPoint[](16);
         points[0] = JPoint(0, 0, 0);
@@ -129,20 +131,20 @@ library Secp256r1 {
         points[2] = _jPointDouble(points[1]);
         points[3] = _jPointAdd(points[1], points[2]);
 
-        points[4] = u1Points[1];
-        points[5] = _jPointAdd(u1Points[1], points[1]);
-        points[6] = _jPointAdd(u1Points[1], points[2]);
-        points[7] = _jPointAdd(u1Points[1], points[3]);
+        points[4] = JPoint(gx, gy, 1); // u1Points[1]
+        points[5] = _jPointAdd(points[4], points[1]);
+        points[6] = _jPointAdd(points[4], points[2]);
+        points[7] = _jPointAdd(points[4], points[3]);
 
-        points[8] = u1Points[2];
-        points[9] = _jPointAdd(u1Points[2], points[1]);
-        points[10] = _jPointAdd(u1Points[2], points[2]);
-        points[11] = _jPointAdd(u1Points[2], points[3]);
+        points[8] = _jPointDouble(points[4]); // u1Points[2]
+        points[9] = _jPointAdd(points[8], points[1]);
+        points[10] = _jPointAdd(points[8], points[2]);
+        points[11] = _jPointAdd(points[8], points[3]);
 
-        points[12] = u1Points[3];
-        points[13] = _jPointAdd(u1Points[3], points[1]);
-        points[14] = _jPointAdd(u1Points[3], points[2]);
-        points[15] = _jPointAdd(u1Points[3], points[3]);
+        points[12] = _jPointAdd(points[4], points[8]); // u1Points[3]
+        points[13] = _jPointAdd(points[12], points[1]);
+        points[14] = _jPointAdd(points[12], points[2]);
+        points[15] = _jPointAdd(points[12], points[3]);
 
         return points;
     }

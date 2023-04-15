@@ -47,6 +47,17 @@ library Secp256r1 {
             return false;
         }
 
+        JPoint[] memory points = _preComputeJacobianPoints(passKey);
+        return VerifyWithPrecompute(points, r, s, e);
+    }
+
+    function VerifyWithPrecompute(JPoint[] memory points, uint r, uint s, uint e)
+        internal returns (bool)
+    {
+        if (r >= nn || s >= nn) {
+            return false;
+        }
+
         uint w = _primemod(s, nn);
 
         uint u1 = mulmod(e, w, nn);
@@ -55,33 +66,8 @@ library Secp256r1 {
         uint x;
         uint y;
 
-        (x, y) = scalarMultiplications(passKey.pubKeyX, passKey.pubKeyY, u1, u2);
+        (x, y) = ShamirMultJacobian(points, u1, u2);
         return (x == r);
-    }
-
-    /*
-    * scalarMultiplications
-    * @description - performs a number of EC operations required in te pk signature verification
-    */
-    function scalarMultiplications(uint X, uint Y, uint u1, uint u2) 
-        internal returns(uint, uint)
-    {
-        uint x1;
-        uint y1;
-        uint z1;
-
-        // uint x2;
-        // uint y2;
-        // uint z2;
-
-        // (x1, y1, z1) = ScalarBaseMultJacobian(u1);
-        // (x2, y2, z2) = ScalarMultJacobian(X, Y, u2);
-        // (x1, y1, z1) = _jAdd(x1, y1, z1, x2, y2, z2);
-
-        (x1, y1, z1) = ShamirMultJacobian(X, Y, u1, u2);
-
-
-        return _affineFromJacobian(x1, y1, z1);
     }
 
     /*
@@ -91,14 +77,12 @@ library Secp256r1 {
     * the individual points for a single pass are precomputed
     * overall this reduces the number of additions while keeping the same number of doublings
     */
-    function ShamirMultJacobian(uint X, uint Y, uint u1, uint u2) internal pure returns (uint, uint, uint) {
+    function ShamirMultJacobian(JPoint[] memory points, uint u1, uint u2) internal returns (uint, uint) {
         uint x = 0;
         uint y = 0;
         uint z = 0;
         uint bits = 128;
         uint index = 0;
-        // precompute the points
-        JPoint[] memory points = _preComputeJacobianPoints(X, Y);
 
         while (bits > 0) {
             if (z > 0) {
@@ -113,10 +97,11 @@ library Secp256r1 {
             u2 <<= 2;
             bits--;
         }
-        return (x, y, z);
+        (x, y) = _affineFromJacobian(x, y, z);
+        return (x, y);
     }
 
-    function _preComputeJacobianPoints(uint X, uint Y) internal pure returns (JPoint[] memory points) {
+    function _preComputeJacobianPoints(PassKeyId memory passKey) internal pure returns (JPoint[] memory points) {
         // JPoint[] memory u1Points = new JPoint[](4);
         // u1Points[0] = JPoint(0, 0, 0);
         // u1Points[1] = JPoint(gx, gy, 1); // u1
@@ -127,7 +112,7 @@ library Secp256r1 {
 
         points = new JPoint[](16);
         points[0] = JPoint(0, 0, 0);
-        points[1] = JPoint(X, Y, 1); // u2
+        points[1] = JPoint(passKey.pubKeyX, passKey.pubKeyY, 1); // u2
         points[2] = _jPointDouble(points[1]);
         points[3] = _jPointAdd(points[1], points[2]);
 
@@ -165,48 +150,6 @@ library Secp256r1 {
         return JPoint(x, y, z);
     }
  
-    /*
-    * ScalarMult
-    * @description performs scalar multiplication of two elliptic curve points, based on golang
-    * crypto/elliptic library
-    */
-    function ScalarMult(uint Bx, uint By, uint k)
-        internal returns (uint, uint)
-    {
-        uint x = 0;
-        uint y = 0;
-        uint z = 0;
-        (x, y, z) = ScalarMultJacobian(Bx, By, k);
-
-        return _affineFromJacobian(x, y, z);
-    }
-
-    function ScalarMultJacobian(uint Bx, uint By, uint k)
-        internal pure returns (uint, uint, uint)
-    {
-        uint Bz = 1;
-        uint x = 0;
-        uint y = 0;
-        uint z = 0;
-
-        while (k > 0) {
-            if (k & 0x01 == 0x01) {
-                (x, y, z) = _jAdd(Bx, By, Bz, x, y, z);
-            }
-            (Bx, By, Bz) = _modifiedJacobianDouble(Bx, By, Bz);
-            k = k >> 1;
-        }
-
-        return (x, y, z);
-    }
-
-    function ScalarBaseMultJacobian(uint k)
-        internal pure returns (uint, uint, uint)
-    {
-        return ScalarMultJacobian(gx, gy, k);
-    }
-
-
     /* _affineFromJacobian
     * @desription returns affine coordinates from a jacobian input follows 
     * golang elliptic/crypto library

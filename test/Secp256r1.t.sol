@@ -8,7 +8,6 @@ contract Secp256r1Test is Test {
     bytes32 messageHash = 0xa591a6d40bf420404a011733cfb7b190d62c65bf0bcda32b57b277d9ad9f146e;
     uint[2] rs = [0x912177ddfa310e5daf1a0d53c567b3c19261cda206bf788eaa4a3a708f090856, 0x1bd0b92ff302efae4782e16c1b3eeb32b05df7cca4c84d74535bd4fb613e02bb];
     PassKeyId Q = PassKeyId(0xa6ad1deeababc22e1eeba4bc93f6535ff95391a1981d9276bbe39b1ce473d6ed, 0x688c2d5b0231d21e9f6ad264cfcdcf09aec15ea8c5c354f38b2fae95e82959e4, "test");
-    JPoint[] points = Secp256r1._preComputeJacobianPoints(Q);
 
     function setUp() public {
     }
@@ -31,10 +30,8 @@ contract Secp256r1Test is Test {
     }
 
     function testCheckSigWithPrecompute() public {
+        JPoint[] memory points = Secp256r1._preComputeJacobianPoints(Q);
         bool validate = Secp256r1.VerifyWithPrecompute(points, rs[0], rs[1], uint256(messageHash));
-        assertTrue(validate);
-
-        validate = Secp256r1.VerifyWithPrecompute(points, rs[0], rs[1], uint256(messageHash));
         assertTrue(validate);
     }
 

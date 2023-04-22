@@ -41,18 +41,18 @@ library Secp256r1 {
     * @param input - hashed message
     */
     function Verify(PassKeyId memory passKey, uint r, uint s, uint e)
-        internal returns (bool)
+        internal view returns (bool)
     {
         if (r >= nn || s >= nn) {
             return false;
         }
 
-        JPoint[] memory points = _preComputeJacobianPoints(passKey);
+        JPoint[16] memory points = _preComputeJacobianPoints(passKey);
         return VerifyWithPrecompute(points, r, s, e);
     }
 
-    function VerifyWithPrecompute(JPoint[] memory points, uint r, uint s, uint e)
-        internal returns (bool)
+    function VerifyWithPrecompute(JPoint[16] memory points, uint r, uint s, uint e)
+        internal view returns (bool)
     {
         if (r >= nn || s >= nn) {
             return false;
@@ -77,7 +77,7 @@ library Secp256r1 {
     * the individual points for a single pass are precomputed
     * overall this reduces the number of additions while keeping the same number of doublings
     */
-    function ShamirMultJacobian(JPoint[] memory points, uint u1, uint u2) internal returns (uint, uint) {
+    function ShamirMultJacobian(JPoint[16] memory points, uint u1, uint u2) internal view returns (uint, uint) {
         uint x = 0;
         uint y = 0;
         uint z = 0;
@@ -101,7 +101,7 @@ library Secp256r1 {
         return (x, y);
     }
 
-    function _preComputeJacobianPoints(PassKeyId memory passKey) internal pure returns (JPoint[] memory points) {
+    function _preComputeJacobianPoints(PassKeyId memory passKey) internal pure returns (JPoint[16] memory points) {
         // JPoint[] memory u1Points = new JPoint[](4);
         // u1Points[0] = JPoint(0, 0, 0);
         // u1Points[1] = JPoint(gx, gy, 1); // u1
@@ -110,7 +110,7 @@ library Secp256r1 {
         // avoiding this intermediate step by using it in a single array below
         // these are pre computed points for u1
 
-        points = new JPoint[](16);
+        // JPoint[16] memory points;
         points[0] = JPoint(0, 0, 0);
         points[1] = JPoint(passKey.pubKeyX, passKey.pubKeyY, 1); // u2
         points[2] = _jPointDouble(points[1]);
@@ -130,8 +130,6 @@ library Secp256r1 {
         points[13] = _jPointAdd(points[12], points[1]);
         points[14] = _jPointAdd(points[12], points[2]);
         points[15] = _jPointAdd(points[12], points[3]);
-
-        return points;
     }
 
     function _jPointAdd(JPoint memory p1, JPoint memory p2) internal pure returns (JPoint memory) {
@@ -155,7 +153,7 @@ library Secp256r1 {
     * golang elliptic/crypto library
     */
     function _affineFromJacobian(uint x, uint y, uint z)
-        internal returns(uint ax, uint ay)
+        internal view returns(uint ax, uint ay)
     {
         if (z==0) {
             return (0, 0);
@@ -281,15 +279,20 @@ library Secp256r1 {
         }
     }
 
+    // Fermats little theorem https://en.wikipedia.org/wiki/Fermat%27s_little_theorem
+    // a^(p-1) = 1 mod p
+    // a^(-1) ≅ a^(p-2) (mod p)
+    // we then use the precompile bigModExp to compute a^(-1)
     function _primemod(uint value, uint p)
-        internal returns (uint ret)
+        internal view returns (uint ret)
     {
         ret = modexp(value, p-2, p);
         return ret;
     }
 
     // Wrapper for built-in BigNumber_modexp (contract 0x5) as described here. https://github.com/ethereum/EIPs/pull/198
-    function modexp(uint _base, uint _exp, uint _mod) internal returns(uint ret) {
+    function modexp(uint _base, uint _exp, uint _mod) internal view returns(uint ret) {
+        // bigModExp(_base, _exp, _mod);
         assembly {
             if gt(_base, _mod) {
                 _base := mod(_base, _mod)
@@ -305,7 +308,7 @@ library Secp256r1 {
             mstore(add(freemem, 0x80), _exp)
             mstore(add(freemem, 0xa0), _mod)
 
-            let success := call(1500, 0x5, 0, freemem, 0xc0, freemem, 0x20)
+            let success := staticcall(1500, 0x5, freemem, 0xc0, freemem, 0x20)
             switch success
             case 0 {
                 revert(0x0, 0x0)

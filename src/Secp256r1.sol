@@ -43,8 +43,8 @@ library Secp256r1 {
     function Verify(PassKeyId memory passKey, uint r, uint s, uint e)
         internal view returns (bool)
     {
-        if (r >= nn || s >= nn) {
-            return false;
+          if (r==0 || s== 0 ||r >= nn || s >= nn) {/* testing null signature, otherwise (0,0) is valid for any message*/
+          return false;
         }
 
         JPoint[16] memory points = _preComputeJacobianPoints(passKey);

@@ -308,7 +308,7 @@ library Secp256r1 {
             mstore(add(freemem, 0x80), _exp)
             mstore(add(freemem, 0xa0), _mod)
 
-            let success := staticcall(1500, 0x5, freemem, 0xc0, freemem, 0x20)
+            let success := staticcall(not(0), 0x5, freemem, 0xc0, freemem, 0x20)
             switch success
             case 0 {
                 revert(0x0, 0x0)

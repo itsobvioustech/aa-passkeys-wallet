@@ -50,8 +50,8 @@ contract PassKeysAccountTest is Test {
             paymasterAndData: bytes(""),
             signature: abi.encode(
                 keccak256(abi.encodePacked("test")),
-                uint256(0x7b1d4e87baa8ae41b3f2f054552c1dbb94fa2857924833fee90b56520976885b),
-                uint256(0x41936d56ed7fba91313899b6578970170758090258d4a21b87d09dc3641baaa0),
+                uint256(0xdb48959436ab95c8a922e6f115d7be6ce91c06890203274dd4843f61ce30ebdd),
+                uint256(0xd89ae1baa0717d1518c6b3b471885a1b3569fc9ba625147733fd20efd71973c4),
                 bytes.concat(bytes32(0xf95bc73828ee210f9fd3bbe72d97908013b0a3759e9aea3d0ae318766cd2e1ad), bytes5(0x0500000000)),
                 string('{"type":"webauthn.get","challenge":"'),
                 string('","origin":"https://webauthn.me","crossOrigin":false}')

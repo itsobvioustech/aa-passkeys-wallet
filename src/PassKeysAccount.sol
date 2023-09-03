@@ -80,7 +80,7 @@ contract PassKeysAccount is SimpleAccount, IPassKeysAccount {
         bytes32 sigHash = sha256(bytes.concat(authenticatorData, clientHash));
 
         PassKeyId memory passKey = authorisedKeys[keyHash];
-        require(passKey.pubKeyY != 0 && passKey.pubKeyY != 0, "Key not found");
+        require(passKey.pubKeyX != 0 && passKey.pubKeyY != 0, "Key not found");
         require(Secp256r1.Verify(passKey, sigx, sigy, uint256(sigHash)), "Invalid signature");
         return 0;
     }
